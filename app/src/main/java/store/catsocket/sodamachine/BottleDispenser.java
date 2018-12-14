@@ -1,5 +1,12 @@
 package store.catsocket.sodamachine;
 
+import android.app.Activity;
+import android.content.Context;
+import android.widget.Toast;
+
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class BottleDispenser {
@@ -15,6 +22,7 @@ public class BottleDispenser {
     public ArrayList<Bottle> alist;
 
     private String productMessage;
+    private String receiptText;
 
     public static BottleDispenser getInstance(){
         return bd;
@@ -26,6 +34,10 @@ public class BottleDispenser {
 
     public double getMoney(){
         return money;
+    }
+
+    public String getReceiptText(){
+        return receiptText;
     }
     public String getProductMessageText(){
         return productMessage;
@@ -88,7 +100,7 @@ public class BottleDispenser {
         }
     }
 
-    public void buyBottle(int input) {
+    public void buyBottleInput(int input) {
 
         more = true;
         while (more) {
@@ -103,10 +115,12 @@ public class BottleDispenser {
                     price = alist.get(input - 1).getPrice();
                     if (money >= price) {
                         money -= alist.get(input - 1).getPrice();
+                        money = Math.round(money *100.0)/100.0;
                         productMessage = "CACHUNCK! " + alist.get(input - 1).getName() + " dropped from the machine!";
+                        receiptText = "You have purchased "+ alist.get(input - 1).getName()+ " for " + alist.get(input - 1).getPrice()+"€ \n"+"Thank you!";
                         alist.remove(input - 1);
                         more = false;
-                    } else {
+                    } else if (money < price){
                         productMessage = "Insert money first!";
                         more = false;
                     }
@@ -116,9 +130,65 @@ public class BottleDispenser {
         }
     }
 
+    public void buyBottleSelect(int index){
+        price = alist.get(index).getPrice();
+        if (money >= price){
+            money -= alist.get(index).getPrice();
+            money = Math.round(money *100.0)/100.0;
+            productMessage = "CACHUNCK! " + alist.get(index).getName() + " dropped from the machine!";
+            receiptText = "You have purchased "+ alist.get(index).getName()+ " for " + alist.get(index).getPrice()+"€ \n"+"Thank you!";
+            alist.remove(index);
+        } else {
+            productMessage = "Insert money first!";
+        }
+    }
+
     public void returnMoney() {
         String formattedMoney = String.format("%.02f", money);
         productMessage = "Clinck clinck. " + formattedMoney +"€ came out!";
         money -= money;
     }
+
+    public void productList(){
+        String line = "";
+        int number = 0;
+
+        for (int i = 0; i < alist.size(); i++) {
+
+            number = i + 1;
+
+            line = line + "\n" + number + ". Name: " + alist.get(i).getName() + " Size: " + alist.get(i).getSize() + "l " + "Price: " + alist.get(i).getPrice() + "€";
+        }
+
+        productMessage = line;
+    }
+
+    public void saveReceipt(Context ctx) {
+
+        String fileNameTxt = "Receipt.txt";
+        String newReceiptText = getReceiptText();
+        FileOutputStream fos = null;
+        try {
+            fos = ctx.openFileOutput(fileNameTxt, ctx.MODE_PRIVATE);
+            fos.write(newReceiptText.getBytes());
+            Toast.makeText(ctx, "Saved to " + ctx.getFilesDir() + "/" + fileNameTxt,
+                    Toast.LENGTH_LONG).show();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            Toast.makeText(ctx, "File not found!", Toast.LENGTH_SHORT).show();
+        } catch (IOException e) {
+            e.printStackTrace();
+            Toast.makeText(ctx, "Error saving!", Toast.LENGTH_SHORT).show();
+        } finally {
+            if (fos != null) {
+                try {
+                    fos.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    Toast.makeText(ctx, "Error saving!", Toast.LENGTH_SHORT).show();
+                }
+            }
+        }
+    }
+
 }
